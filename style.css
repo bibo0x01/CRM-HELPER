@@ -1,0 +1,17 @@
+#quick-replies {
+    margin-bottom: 8px;
+}
+
+#quick-replies button {
+    margin: 4px;
+    padding: 6px 10px;
+    border: none;
+    background: #2d89ef;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+#quick-replies button:hover {
+    background: #1b5fa7;
+}
