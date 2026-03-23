@@ -1,10 +1,14 @@
 {
     "manifest_version": 3,
     "name": "CRM Quick Replies",
-    "version": "1.0",
-    "description": "Quick replies for onboarding chat",
+    "version": "1.1",
+    "description": "Quick replies and customer collector for onboarding chat",
     "permissions": [
-        "activeTab"
+        "activeTab",
+        "storage"
+    ],
+    "host_permissions": [
+        "https://old-app.easyconfirm.net/*"
     ],
     "content_scripts": [
         {

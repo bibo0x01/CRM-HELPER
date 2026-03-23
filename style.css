@@ -1,17 +1,47 @@
+/* Container */
 #quick-replies {
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 0;
 }
 
+/* Buttons */
 #quick-replies button {
-    margin: 4px;
-    padding: 6px 10px;
+    padding: 6px 12px;
     border: none;
-    background: #2d89ef;
-    color: white;
     border-radius: 6px;
     cursor: pointer;
+    font-size: 13px;
+    color: white;
+    transition: all 0.2s ease;
 }
 
-#quick-replies button:hover {
+#quick-replies button.reply-btn {
+    background: #2d89ef;
+}
+
+#quick-replies button.reply-btn:hover {
     background: #1b5fa7;
+}
+
+#quick-replies button.export-btn {
+    background: #28a745;
+}
+
+#quick-replies button.export-btn:hover {
+    background: #1f7a34;
+}
+
+#quick-replies button.shipped-btn {
+    background: #d32f2f;
+}
+
+#quick-replies button.shipped-btn:hover {
+    background: #a52828;
+}
+
+#quick-replies button:active {
+    transform: scale(0.97);
 }
