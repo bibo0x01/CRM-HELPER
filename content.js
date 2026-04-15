@@ -1,12 +1,10 @@
 // ================= DATA (LOAD FROM STORAGE) =================
 let replies = JSON.parse(localStorage.getItem("replies") || "{}");
 
-// save helper
 function saveReplies() {
     localStorage.setItem("replies", JSON.stringify(replies));
 }
 
-// ================= UI =================
 function insertSidebar() {
     if (document.getElementById("crm-sidebar")) return;
 
@@ -86,7 +84,7 @@ function insertSidebar() {
 
     renderReplies("");
 
-    // ================= SEND =================
+
     function sendReply(text) {
         const textarea = document.querySelector('textarea[placeholder="Type a message"]');
         if (!textarea) return;
@@ -114,7 +112,6 @@ function insertSidebar() {
         }, 100);
     }
 
-    // ================= SEARCH + SHORTCUT =================
     document.getElementById("searchBox").addEventListener("input", function (e) {
         const val = e.target.value.trim();
 
@@ -135,7 +132,6 @@ function insertSidebar() {
         renderReplies(val);
     });
 
-    // ================= ADD =================
     document.getElementById("addReplyBtn").onclick = function () {
         const key = document.getElementById("newKey").value.trim();
         const value = document.getElementById("newValue").value.trim();
@@ -153,5 +149,4 @@ function insertSidebar() {
     };
 }
 
-// ================= RUN =================
 setInterval(insertSidebar, 2000);
