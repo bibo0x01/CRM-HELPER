@@ -1,0 +1,37 @@
+#crm-sidebar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 260px;
+    height: 100vh;
+    background: #111827;
+    color: white;
+    z-index: 9999;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: sans-serif;
+}
+
+#searchBox {
+    width: 100%;
+    padding: 6px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: none;
+}
+
+.reply-btn {
+    width: 100%;
+    margin-bottom: 6px;
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    background: #1f2937;
+    color: white;
+    cursor: pointer;
+    text-align: left;
+}
+
+.reply-btn:hover {
+    background: #2563eb;
+}

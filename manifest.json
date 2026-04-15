@@ -1,0 +1,22 @@
+{
+    "manifest_version": 3,
+    "name": "EasyOrders Quick Replies",
+    "version": "1.0",
+    "description": "Quick replies for CRM",
+    "permissions": [
+        "activeTab"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "https://old-app.easyconfirm.net/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "css": [
+                "style.css"
+            ]
+        }
+    ]
+}
