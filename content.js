@@ -1,91 +1,138 @@
-// ================= DATA (LOAD FROM STORAGE) =================
 let replies = JSON.parse(localStorage.getItem("replies") || "{}");
+let pinned = JSON.parse(localStorage.getItem("pinned") || "[]");
 
-function saveReplies() {
+function saveAll() {
     localStorage.setItem("replies", JSON.stringify(replies));
+    localStorage.setItem("pinned", JSON.stringify(pinned));
 }
 
-function insertSidebar() {
+function init() {
     if (document.getElementById("crm-sidebar")) return;
+
+    const toggle = document.createElement("div");
+    toggle.id = "crm-toggle";
+    toggle.innerText = "💬";
 
     const sidebar = document.createElement("div");
     sidebar.id = "crm-sidebar";
 
     sidebar.innerHTML = `
-        <input type="text" id="searchBox" placeholder="Search reply or type /..." />
+        <div class="crm-header">
+            <span>Quick Replies</span>
+            <button id="closeSidebar">✖</button>
+        </div>
 
-        <div style="margin:8px 0;">
+        <input type="text" id="searchBox" placeholder="Search replies..." />
+
+        <div class="add-box">
             <input id="newKey" placeholder="Reply name" />
-            <textarea id="newValue" placeholder="Reply text"></textarea>
+            <textarea id="newValue" placeholder="Reply text (Ctrl+Enter)" ></textarea>
             <button id="addReplyBtn">Add Reply</button>
         </div>
 
         <div id="replies"></div>
     `;
 
+    document.body.appendChild(toggle);
     document.body.appendChild(sidebar);
 
     const container = document.getElementById("replies");
+    const searchBox = document.getElementById("searchBox");
 
-    // ================= RENDER =================
-    function renderReplies(filter) {
-        filter = filter || "";
+    toggle.onclick = () => sidebar.classList.toggle("open");
+    document.getElementById("closeSidebar").onclick = () => sidebar.classList.remove("open");
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") sidebar.classList.remove("open");
+    });
+
+    function highlight(text, query) {
+        if (!query) return text;
+
+        const regex = new RegExp(`(${query})`, "gi");
+        return text.replace(regex, `<mark>$1</mark>`);
+    }
+
+    function render(filter = "") {
         container.innerHTML = "";
 
-        const keys = Object.keys(replies).filter(key =>
-            key.toLowerCase().includes(filter.toLowerCase())
+        let keys = Object.keys(replies).filter(k =>
+            k.toLowerCase().includes(filter.toLowerCase())
         );
 
-        if (keys.length === 0) {
-            container.innerHTML = `<div style="opacity:0.6;padding:10px;">No replies yet...</div>`;
+        keys.sort((a, b) => {
+            const ap = pinned.includes(a) ? -1 : 0;
+            const bp = pinned.includes(b) ? -1 : 0;
+            return ap - bp;
+        });
+
+        if (!keys.length) {
+            container.innerHTML = `<div class="empty">No replies</div>`;
             return;
         }
 
         keys.forEach(key => {
             const row = document.createElement("div");
-            row.style = "display:flex;gap:5px;align-items:center;margin:5px 0;";
+            row.className = "reply-row";
 
-            // BUTTON (send)
             const btn = document.createElement("button");
             btn.className = "reply-btn";
-            btn.innerText = key;
+            btn.innerHTML = highlight(key, filter);
+            btn.onclick = () => send(replies[key]);
 
-            btn.onclick = () => sendReply(replies[key]);
 
-            // EDIT
-            const editBtn = document.createElement("button");
-            editBtn.innerText = "✏️";
-            editBtn.onclick = () => {
+            const pin = document.createElement("button");
+            pin.innerText = pinned.includes(key) ? "📌" : "📍";
+            pin.onclick = () => {
+                if (pinned.includes(key)) {
+                    pinned = pinned.filter(p => p !== key);
+                } else {
+                    pinned.push(key);
+                }
+                saveAll();
+                render(searchBox.value);
+            };
+
+
+            const editValue = document.createElement("button");
+            editValue.innerText = "✏️";
+            editValue.onclick = () => {
                 const newText = prompt("Edit reply:", replies[key]);
                 if (!newText) return;
 
                 replies[key] = newText;
-                saveReplies();
-                renderReplies(document.getElementById("searchBox").value);
+                saveAll();
+                render(searchBox.value);
             };
 
-            // DELETE
-            const delBtn = document.createElement("button");
-            delBtn.innerText = "🗑️";
-            delBtn.onclick = () => {
-                if (!confirm("Delete this reply?")) return;
+
+            const editKey = document.createElement("button");
+            editKey.innerText = "📝";
+            editKey.onclick = () => {
+                const newKey = prompt("Rename key:", key);
+                if (!newKey || replies[newKey]) return;
+
+                replies[newKey] = replies[key];
                 delete replies[key];
-                saveReplies();
-                renderReplies(document.getElementById("searchBox").value);
+
+                pinned = pinned.map(p => p === key ? newKey : p);
+
+                saveAll();
+                render(searchBox.value);
             };
 
             row.appendChild(btn);
-            row.appendChild(editBtn);
-            row.appendChild(delBtn);
+            row.appendChild(pin);
+            row.appendChild(editValue);
+            row.appendChild(editKey);
 
             container.appendChild(row);
         });
     }
 
-    renderReplies("");
+    render();
 
-
-    function sendReply(text) {
+    function send(text) {
         const textarea = document.querySelector('textarea[placeholder="Type a message"]');
         if (!textarea) return;
 
@@ -112,41 +159,31 @@ function insertSidebar() {
         }, 100);
     }
 
-    document.getElementById("searchBox").addEventListener("input", function (e) {
-        const val = e.target.value.trim();
-
-        // 🧠 SHORTCUT MODE
-        if (val.startsWith("/")) {
-            const shortcut = val.replace("/", "");
-
-            const matchKey = Object.keys(replies).find(k =>
-                k.toLowerCase() === shortcut.toLowerCase()
-            );
-
-            if (matchKey) {
-                sendReply(replies[matchKey]);
-            }
-            return;
-        }
-
-        renderReplies(val);
+    searchBox.addEventListener("input", (e) => {
+        render(e.target.value.trim());
     });
 
-    document.getElementById("addReplyBtn").onclick = function () {
-        const key = document.getElementById("newKey").value.trim();
-        const value = document.getElementById("newValue").value.trim();
+    document.getElementById("addReplyBtn").onclick = () => {
+        const key = newKey.value.trim();
+        const value = newValue.value.trim();
 
-        if (!key || !value) return alert("اكتب الاسم والرد");
+        if (!key || !value) return;
 
         replies[key] = value;
+        saveAll();
 
-        saveReplies();
+        newKey.value = "";
+        newValue.value = "";
 
-        document.getElementById("newKey").value = "";
-        document.getElementById("newValue").value = "";
-
-        renderReplies(document.getElementById("searchBox").value);
+        render(searchBox.value);
     };
+
+
+    document.getElementById("newValue").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && e.ctrlKey) {
+            document.getElementById("addReplyBtn").click();
+        }
+    });
 }
 
-setInterval(insertSidebar, 2000);
+window.addEventListener("load", init);
