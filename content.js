@@ -1,5 +1,13 @@
-let replies = JSON.parse(localStorage.getItem("replies") || "{}");
-let pinned = JSON.parse(localStorage.getItem("pinned") || "[]");
+let replies = safeParse("replies", {});
+let pinned = safeParse("pinned", []);
+
+function safeParse(key, fallback) {
+    try {
+        return JSON.parse(localStorage.getItem(key)) || fallback;
+    } catch {
+        return fallback;
+    }
+}
 
 function saveAll() {
     localStorage.setItem("replies", JSON.stringify(replies));
@@ -26,7 +34,7 @@ function init() {
 
         <div class="add-box">
             <input id="newKey" placeholder="Reply name" />
-            <textarea id="newValue" placeholder="Reply text (Ctrl+Enter)" ></textarea>
+            <textarea id="newValue" placeholder="Reply text (Ctrl+Enter)"></textarea>
             <button id="addReplyBtn">Add Reply</button>
         </div>
 
@@ -48,7 +56,6 @@ function init() {
 
     function highlight(text, query) {
         if (!query) return text;
-
         const regex = new RegExp(`(${query})`, "gi");
         return text.replace(regex, `<mark>$1</mark>`);
     }
@@ -78,8 +85,8 @@ function init() {
             const btn = document.createElement("button");
             btn.className = "reply-btn";
             btn.innerHTML = highlight(key, filter);
-            btn.onclick = () => send(replies[key]);
 
+            btn.onclick = () => send(replies[key]);
 
             const pin = document.createElement("button");
             pin.innerText = pinned.includes(key) ? "📌" : "📍";
@@ -93,18 +100,15 @@ function init() {
                 render(searchBox.value);
             };
 
-
             const editValue = document.createElement("button");
             editValue.innerText = "✏️";
             editValue.onclick = () => {
                 const newText = prompt("Edit reply:", replies[key]);
                 if (!newText) return;
-
                 replies[key] = newText;
                 saveAll();
                 render(searchBox.value);
             };
-
 
             const editKey = document.createElement("button");
             editKey.innerText = "📝";
@@ -132,35 +136,67 @@ function init() {
 
     render();
 
-    function send(text) {
-        const textarea = document.querySelector('textarea[placeholder="Type a message"]');
-        if (!textarea) return;
+    // ✅ NEW: detect input dynamically
+    function getChatInput() {
+        const editable = document.querySelectorAll('[contenteditable="true"]');
+        if (editable.length) return editable[editable.length - 1];
 
-        textarea.focus();
-
-        const setter = Object.getOwnPropertyDescriptor(
-            textarea.__proto__,
-            "value"
-        ).set;
-
-        setter.call(textarea, text);
-
-        textarea.dispatchEvent(new Event("input", { bubbles: true }));
-
-        setTimeout(() => {
-            textarea.dispatchEvent(
-                new KeyboardEvent("keydown", {
-                    bubbles: true,
-                    cancelable: true,
-                    key: "Enter",
-                    code: "Enter"
-                })
-            );
-        }, 100);
+        return document.querySelector("textarea");
     }
 
+    // ✅ FIXED SEND FUNCTION
+    function send(text) {
+        const input = getChatInput();
+
+        if (!input) {
+            alert("Chat input not found!");
+            return;
+        }
+
+        input.focus();
+
+        // لو contenteditable
+        if (input.getAttribute("contenteditable") === "true") {
+            input.innerHTML = "";
+            input.innerText = text;
+
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+
+            setTimeout(() => {
+                input.dispatchEvent(new KeyboardEvent("keydown", {
+                    bubbles: true,
+                    cancelable: true,
+                    key: "Enter"
+                }));
+            }, 100);
+
+        } else {
+            // textarea fallback
+            const nativeSetter = Object.getOwnPropertyDescriptor(
+                window.HTMLTextAreaElement.prototype,
+                "value"
+            ).set;
+
+            nativeSetter.call(input, text);
+
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+
+            setTimeout(() => {
+                input.dispatchEvent(new KeyboardEvent("keydown", {
+                    bubbles: true,
+                    key: "Enter"
+                }));
+            }, 100);
+        }
+    }
+
+    // debounce search
+    let timeout;
     searchBox.addEventListener("input", (e) => {
-        render(e.target.value.trim());
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            render(e.target.value.trim());
+        }, 200);
     });
 
     document.getElementById("addReplyBtn").onclick = () => {
@@ -177,7 +213,6 @@ function init() {
 
         render(searchBox.value);
     };
-
 
     document.getElementById("newValue").addEventListener("keydown", (e) => {
         if (e.key === "Enter" && e.ctrlKey) {
